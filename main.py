@@ -1,0 +1,743 @@
+import pandas as pd
+from datetime  import datetime as dt,timedelta                                    # Not important
+import mysql.connector
+from flask import Flask, request,jsonify,make_response,render_template,Response
+from faker import Faker
+from functools import wraps
+import random
+import pyfloat
+import jwt
+import bcrypt
+import time
+import datetime
+from jwt.exceptions import ExpiredSignatureError,InvalidTokenError
+app = Flask(__name__)
+
+mydb = mysql.connector.connect(
+    host='localhost',
+    user='root',
+    password="شش2806607",
+    database='fitness',
+    )
+
+app.config['SECRET_KEY']='AbdullahFawazMahmoud'
+my_cursor = mydb.cursor()
+fake=Faker()
+
+
+
+
+@app.route('/get_records/<table_name>')
+def get_records(table_name):
+    try:
+        
+
+        # Create the SELECT query
+        query = f"SELECT * FROM {table_name}"
+
+        # Execute the query
+        my_cursor.execute(query)
+
+        # Fetch all rows
+        rows = my_cursor.fetchall()
+
+        # Get column names
+        column_names = [desc[0] for desc in my_cursor.description]
+
+        # Prepare the result as a list of dictionaries
+        records = []
+        for row in rows:
+            record = {}
+            for i in range(len(column_names)):
+                record[column_names[i]] = row[i]
+            records.append(record)
+
+
+
+        if records:
+            return jsonify(records)
+        else:
+            return 'No records found'
+    except mysql.connector.Error as error:
+        print(f"Failed to get records from table {table_name}: {error}")
+        return 'Failed to get records'
+
+
+
+
+@app.route('/search', methods=['GET'])
+def search_exercises():
+    # Get the query parameters from the URL
+    field_value_pairs = request.args
+
+    # Create a cursor to interact with the database
+
+    # Build the search query dynamically based on the provided field-value pairs
+    query = "SELECT * FROM exercise WHERE "
+    params = []
+    conditions = []
+    for field, value in field_value_pairs.items():
+        conditions.append(f"{field} = %s")
+        params.append(value)
+    query += " AND ".join(conditions)
+
+    my_cursor.execute(query, params)
+    results = my_cursor.fetchall()
+
+    if not results:
+        return jsonify({'message': 'No matching exercises found.'}), 404
+
+    exercises = []
+    for exercise in results:
+        exercise_data = {
+            'id': exercise[0],
+            'title': exercise[1],
+            'descr': exercise[2],
+            'type': exercise[3],
+            'bodypart': exercise[4],
+            'equipment': exercise[5],
+            'level': exercise[6],
+            'rating': exercise[7],
+            'ratingdesc': exercise[8]
+        }
+        
+        
+
+    return jsonify(exercises)
+
+    
+@app.route('/users')
+def SearchEngin():
+    sql = ['use fitness', 'select * from users ']
+    # where equipment = "Bands" AND type = "Powerlifting"
+
+    user_id = request.args.get('user_id', default=None)
+    f_name = request.args.get('f_name', default=None)
+    l_name = request.args.get('l_name', default=None)
+    birth_date = request.args.get('birth_date', default=None)
+    country = request.args.get('country', default=None)
+    email = request.args.get('email', default=None)
+    phone_no = request.args.get('phone_no', default=None)
+
+@app.route('/')
+def printExersiceTable():
+    name = request.args['name']
+    now = dt.now()
+    now1 = now.strftime("%m/%d/%Y, %H:%M:%S")
+    return HELLO_HTML.format(name, now1)
+
+
+HELLO_HTML = """
+    <html><body>
+        <h1>Hello, {0}!</h1>
+        The time is {1}.
+    </body></html>"""
+
+
+@app.route('/getUnique')
+def getUnique():
+    unique_column = request.args.get('column', default=None)
+    sql = ['use fitness', f'SELECT DISTINCT {unique_column} from exercise']
+    for i in sql:
+        my_cursor.execute(i)
+
+    cursor_data = my_cursor.fetchall()
+    data_frame = pd.DataFrame(cursor_data)
+    data_frame.rename(columns={0: f'{unique_column}'}, inplace=True)
+    result = data_frame.to_html(header="true", table_id="table")
+    return result
+
+
+
+
+@app.route('/insert_users')
+def insert_users():
+      
+     characters = "01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ&*(){}[]|/\?!@#$%^abcdefghijklmnopqrstuvwxyz"
+     fake = Faker('en_US')
+     gender = ["M", "F"]
+     profile = fake.simple_profile(sex=gender[random.randint(0, 1)])
+     name = profile['name']
+     sex = profile['sex']
+     username = profile['username']
+     password = "".join(random.sample(characters, random.randint(8, 20)))
+     email = profile['mail']
+     birthdate = fake.date_of_birth(minimum_age=17, maximum_age=60)
+    
+    # Calculate the age based on the current date
+     age = (dt.now().date() - birthdate).days // 365
+     weight = random.randint(50, 120)
+     height = random.uniform(1.5, 1.9)
+     bmi = weight / (height * height)
+
+    # Define the SQL query to insert the object data into a table
+     values = ( name, age, weight, height, bmi, sex, username, password, email)
+     sql = "INSERT into user ( name, age, weight, height, bmi, sex, username, password, email) " \
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    
+     try:
+        # Execute the SQL query
+        my_cursor.execute(sql, values)
+        # Commit the changes to the database
+        mydb.commit()
+        return "User data inserted successfully."
+     except Exception as e:
+        # Rollback the changes if an error occurs
+        mydb.rollback()
+        return "Error inserting user data: " + str(e)
+
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    # Get user data from request
+    email = request.json['email']
+    password = request.json['password']
+
+    # Create a cursor to interact with the database
+
+    # Check if the user exists and the password is correct
+    my_cursor.execute("SELECT * FROM user WHERE email = %s AND password = %s", (email, password))
+    user = my_cursor.fetchone()
+
+    if not user:
+        # User does not exist or password is incorrect
+        return jsonify({'message': 'Invalid email or password'})
+
+    existing_token = None
+    # Check if the user already has a token
+    if 'token' in user:
+        existing_token = user[1]  # Assuming the token is stored in the 'token' field of the user dictionary
+
+    if existing_token is not None:
+        existing_token = existing_token.encode('utf-8')  # Encode the token as bytes
+        try:
+            # Verify the existing token
+            existing_payload = jwt.decode(existing_token, 'AbdullahFawazMahmoud')
+
+            # Extend the expiration time by 30 minutes
+            existing_payload['exp'] = dt.utcnow() + datetime.timedelta(minutes=180)
+
+            # Encode the updated payload with the secret key
+            token = jwt.encode(existing_payload, 'AbdullahFawazMahmoud')
+        except jwt.ExpiredSignatureError:
+            # Existing token has expired, generate a new token as usual
+            token_payload = {
+                'user_id': user[0],  # Assuming the user id is stored in the 'user_id' field of the user dictionary
+                'exp': dt.utcnow() + datetime.timedelta(minutes=180)
+            }
+            token = jwt.encode(token_payload, 'AbdullahFawazMahmoud')
+    else:
+        # Generate a new token as usual
+        token_payload = {
+            'user_id': user[0],  # Assuming the user id is stored in the 'user_id' field of the user dictionary
+            'exp': dt.utcnow() + datetime.timedelta(minutes=30)
+        }
+        token = jwt.encode(token_payload, 'AbdullahFawazMahmoud')
+
+    # Update the token in the user table
+    my_cursor.execute("UPDATE user SET token = %s WHERE user_id = %s", (token.decode('utf-8'), user[0]))  # Assuming the user id is stored in the 'user_id' field of the user dictionary
+    mydb.commit()
+
+    return jsonify({'token': token.decode('utf-8')})
+
+       
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    # Get user email and password from the request body
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+
+    # Check if email already exists
+    sql = "SELECT * FROM user WHERE email = %s"
+    value = (email,)
+    my_cursor.execute(sql, value)
+    user = my_cursor.fetchone()
+    if user:
+        return jsonify({'message': 'Email already registered.'}), 409
+
+    # Insert user into the database
+    sql = "INSERT INTO user (email, password) VALUES (%s, %s)"
+    values = (email, password)
+    my_cursor.execute(sql, values)
+    mydb.commit()
+
+    return jsonify({'message': 'User registered successfully.'}), 201
+
+
+
+@app.route('/user_info', methods=['POST'])
+def create_user():
+    try:
+        # Get user data from the request body
+        data = request.json
+        email= data.get("email")
+        sex = data.get('sex')
+        date_of_birth = data.get('date_of_birth')
+        weight = float(data.get('weight'))
+        height = float(data.get('height'))
+
+        # Check if height and weight are within the specified ranges
+        if not (1.4 <= height <= 2.1):
+            return jsonify({'error': 'Invalid height. Height should be between 1.4 and 2.1 meters.'}), 400
+
+        if not (40 <= weight <= 180):
+            return jsonify({'error': 'Invalid weight. Weight should be between 40 and 180 kilograms.'}), 400
+
+        # Check if the sex field is valid
+        if sex not in ('F', 'M'):
+            return jsonify({'error': 'Invalid sex. Sex should be either "F" for female or "M" for male.'}), 400
+
+        # Calculate age based on the provided date of birth
+        dob = dt.strptime(date_of_birth, '%Y-%m-%d')
+        today = dt.today()
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+        # Calculate BMI
+        bmi = weight / (height ** 2)
+
+        # Insert user into the database
+        sql_update = "UPDATE user SET sex = %s, age = %s, weight = %s, height = %s, bmi = %s WHERE email = %s"
+        values = (sex, age, weight, height,bmi, email)
+        my_cursor.execute(sql_update, values)
+        mydb.commit()
+
+        return jsonify({'message': 'User informations inserted successfully.'}), 201
+
+    except mysql.connector.Error as error:
+        return jsonify({'error': 'Database error: ' + str(error)}), 500
+
+    except Exception as e:
+        return jsonify({'error': 'An error occurred: ' + str(e)}), 500
+
+
+
+
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    # Get the user's ID, token, and new password from the request body
+    data = request.json
+    user_id = data.get('user_id')
+    token = data.get('token')
+    new_password = data.get('new_password')
+
+    # Check if the user exists in the database
+    my_cursor.execute("SELECT * FROM user WHERE user_id = %(user_id)s", {'user_id': user_id})
+    user = my_cursor.fetchone()
+    if user:
+        # Check if the provided token matches the user's token in the database
+        stored_token = user[1]  # Assuming the token field is at index 1
+        if token == stored_token:
+            # Update the user's password
+            my_cursor.execute("UPDATE user SET password = %(new_password)s WHERE user_id = %(user_id)s", {'new_password': new_password, 'user_id': user_id})
+            mydb.commit()
+            return jsonify({'message': 'Password reset successful.'}), 200
+        else:
+            return jsonify({'message': 'Please check your email or password.'}), 401
+    else:
+        return jsonify({'message': 'User not found.'}), 404
+
+
+
+
+
+
+def verify_token(token):
+    # Check if the token exists in the user table
+    sql = "SELECT user_id FROM user WHERE token = %s"
+    my_cursor.execute(sql, (token,))
+    result = my_cursor.fetchone()
+
+    if result:
+        return result[0]  # Return the user ID associated with the token
+    else:
+        return None
+
+
+
+##@app.route('/workouts/<int:user_id>', methods=['GET'])
+##def get_trainee_workouts(user_id):
+    # Retrieve the token from the request headers
+    authorization_header = request.headers.get('Authorization')
+
+    if not authorization_header:
+        return jsonify({'error': 'No token provided'}), 401
+
+    try:
+        # Check if the token starts with "Bearer "
+        if authorization_header.startswith('Bearer '):
+            # Split the token to extract the actual token value
+            token = authorization_header.split(' ')[1]
+        else:
+            return jsonify({'error': 'Invalid token'}), 401
+
+        # Verify and decode the token
+        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+
+        # Extract user ID from the token payload
+        user_id_from_token = payload['user_id']
+
+        if user_id != user_id_from_token:
+            return jsonify({'error': 'Invalid user ID'}), 401
+
+        # Retrieve workouts for the trainee based on user ID
+        sql = """
+                SELECT user_id, name, plan_id, exercise.id, title
+                FROM user
+                JOIN plan ON user.user_id = plan.user_user_id1
+                JOIN planexerciseid ON plan.plan_id = planexerciseid.plan_plan_id
+                JOIN exercise ON planexerciseid.exercise_id = exercise.id
+                WHERE user.user_id = %s
+             """
+        my_cursor.execute(sql, (user_id,))
+        workouts = my_cursor.fetchall()
+
+        # Check if any workouts are found
+        if not workouts:
+            return jsonify({'error': 'No workouts found for the trainee.'}), 404
+
+        # Format the response
+        results = []
+        for workout in workouts:
+            user_id, name, plan_id, id, title = workout
+            workout_data = {
+                'user_id': user_id,
+                'name': name,
+                'plan_id': plan_id,
+                'exercise_id': id,
+                'title': title
+            }
+            results.append(workout_data)
+
+        return jsonify(results), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
+
+
+##@app.route('/workout/<int:user_id>/<int:plan_id>', methods=['GET'])
+##def get_trainee_workout(user_id, plan_id):
+    # Retrieve the user record from the user table
+    query = "SELECT token FROM user WHERE user_id = %s"
+    my_cursor.execute(query, (user_id,))
+    result = my_cursor.fetchone()
+
+    if not result:
+        return jsonify({'error': 'User not found'}), 404
+
+    token = result[0]
+
+    if not token:
+        return jsonify({'error': 'No token provided'}), 401
+
+    try:
+        # Check if the token starts with "Bearer "
+        if token.startswith('Bearer '):
+            # Split the token to extract the actual token value
+            token = token.split(' ')[1]
+
+        # Verify and decode the token
+        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+
+        # Extract user ID from the token payload
+        user_id_from_token = payload['user_id']
+
+        if user_id != user_id_from_token:
+            return jsonify({'error': 'Invalid user ID'}), 401
+
+        # Retrieve workouts for the trainee based on user ID and plan ID
+        sql = """
+                SELECT user_id, name, plan_id, exercise.id, title
+                FROM user 
+                JOIN plan ON user.user_id = plan.user_user_id1
+                JOIN planexerciseid ON plan.plan_id = planexerciseid.plan_plan_id
+                JOIN exercise ON planexerciseid.exercise_id = exercise.id
+                WHERE user.user_id = %s AND plan.plan_id = %s
+             """
+        my_cursor.execute(sql, (user_id, plan_id))
+        workouts = my_cursor.fetchall()
+
+        # Check if any workouts are found
+        if not workouts:
+            return jsonify({'error': 'No workouts found for the trainee.'}), 404
+
+        # Format the response
+        results = []
+        for workout in workouts:
+            user_id, name, plan_id, id, title = workout
+            workout_data = {
+                'user_id': user_id,
+                'name': name,
+                'plan_id': plan_id,
+                'exercise_id': id,
+                'title': title
+            }
+            results.append(workout_data)
+
+        return jsonify(results), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
+
+
+
+@app.route('/plan/exercises', methods=['POST'])
+def add_exercises_to_plan():
+    # Retrieve the token from the request's Authorization header
+    token = request.headers.get('Authorization')
+
+    if not token:
+        return jsonify({'error': 'No token provided'}), 401
+
+    try:
+        # Remove the "Bearer" prefix from the token if present
+        if token.startswith('Bearer '):
+            token = token.split(' ')[1]
+
+        # Verify and decode the token
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        # Extract user ID from the decoded token
+        user_id = decoded_token['user_id']
+
+        # Retrieve the exercise data, plan ID, and level from the request body
+        request_data = request.get_json()
+
+        if not request_data:
+            return jsonify({'error': 'No request data provided'}), 400
+
+        exercise_data = request_data.get('exercises')
+        plan_id = request_data.get('plan_id')
+        level = request_data.get('level')
+
+        if not exercise_data:
+            return jsonify({'error': 'No exercise data provided'}), 400
+
+        if not plan_id:
+            return jsonify({'error': 'No plan ID provided'}), 400
+
+        # Validate the level field
+        valid_levels = ["Gain Weight", "Weight Loss", "Improve Fitness"]
+        if level not in valid_levels:
+            return jsonify({'error': 'Invalid level'}), 400
+
+        # Check if the provided plan ID belongs to the user
+        check_query = "SELECT COUNT(*) FROM plan WHERE plan_id = %s AND user_user_id1 = %s"
+        my_cursor.execute(check_query, (plan_id, user_id))
+        count = my_cursor.fetchone()[0]
+
+        if count == 0:
+            return jsonify({'error': 'Invalid plan ID'}), 400
+
+        # Update the level for the existing plan
+        update_query = "UPDATE plan SET level = %s WHERE plan_id = %s"
+        my_cursor.execute(update_query, (level, plan_id))
+        mydb.commit()
+
+        # Insert the exercises into the planexerciseid table
+        insert_query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
+        for exercise_id in exercise_data:
+            my_cursor.execute(insert_query, (plan_id, exercise_id))
+        mydb.commit()
+
+        return jsonify({'message': 'Exercises added to the plan successfully', 'plan_id': plan_id}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
+
+
+
+
+@app.route('/workouts/<int:user_id>', methods=['GET'])
+def get_trainee_workouts(user_id):
+    # Retrieve the token from the request headers
+    authorization_header = request.headers.get('Authorization')
+
+    if not authorization_header:
+        return jsonify({'error': 'No token provided'}), 401
+
+    try:
+        # Check if the token starts with "Bearer "
+        if authorization_header.startswith('Bearer '):
+            # Split the token to extract the actual token value
+            token = authorization_header.split(' ')[1]
+        else:
+            return jsonify({'error': 'Invalid token'}), 401
+
+        # Verify and decode the token
+        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+
+        # Extract user ID from the token payload
+        user_id_from_token = payload['user_id']
+
+        if user_id != user_id_from_token:
+            return jsonify({'error': 'Invalid user ID'}), 401
+
+        # Retrieve plan IDs, title, and goal for the trainee based on user ID
+        sql = """
+                SELECT plan_id, level
+                FROM plan
+                WHERE user_user_id1 = %s
+             """
+        my_cursor.execute(sql, (user_id,))
+        plan_records = my_cursor.fetchall()
+
+        # Check if any plan IDs are found
+        if not plan_records:
+            return jsonify({'error': 'No plans found for the trainee.'}), 404
+
+        # Format the response
+        response = []
+        for record in plan_records:
+            plan_id, level = record
+            workout_data = {
+                'plan_id': plan_id,
+                'level': level
+                
+            }
+            response.append(workout_data)
+
+        return jsonify(response), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
+
+
+@app.route('/workout/<int:user_id>/<int:plan_id>', methods=['GET'])
+def get_trainee_workout(user_id, plan_id):
+    # Retrieve the user record from the user table
+    query = "SELECT token FROM user WHERE user_id = %s"
+    my_cursor.execute(query, (user_id,))
+    result = my_cursor.fetchone()
+
+    if not result:
+        return jsonify({'error': 'User not found'}), 404
+
+    token = result[0]
+
+    if not token:
+        return jsonify({'error': 'No token provided'}), 401
+
+    try:
+        # Check if the token starts with "Bearer "
+        if token.startswith('Bearer '):
+            # Split the token to extract the actual token value
+            token = token.split(' ')[1]
+
+        # Verify and decode the token
+        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+
+        # Extract user ID from the token payload
+        user_id_from_token = payload['user_id']
+
+        if user_id != user_id_from_token:
+            return jsonify({'error': 'Invalid user ID'}), 401
+
+        # Retrieve workouts for the trainee based on user ID and plan ID
+        sql = """
+                SELECT exercise.title
+                FROM user 
+                JOIN plan ON user.user_id = plan.user_user_id1
+                JOIN planexerciseid ON plan.plan_id = planexerciseid.plan_plan_id
+                JOIN exercise ON planexerciseid.exercise_id = exercise.id
+                WHERE user.user_id = %s AND plan.plan_id = %s
+             """
+        my_cursor.execute(sql, (user_id, plan_id))
+        workouts = my_cursor.fetchall()
+
+        # Check if any workouts are found
+        if not workouts:
+            return jsonify({'error': 'No workouts found for the trainee.'}), 404
+
+        # Format the response
+        results = []
+        for workout in workouts:
+            title = workout[0]
+            workout_data = {'title': title}
+            results.append(workout_data)
+
+        return jsonify(results), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
+
+
+@app.route('/profile', methods=['GET'])
+def get_user_profile():
+    # Retrieve the token from the request's Authorization header
+    token = request.headers.get('Authorization')
+
+    if not token:
+        return jsonify({'error': 'No token provided'}), 401
+
+    try:
+        # Remove the "Bearer" prefix from the token if present
+        if token.startswith('Bearer '):
+            token = token.split(' ')[1]
+
+        # Verify and decode the token
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        # Extract user ID from the decoded token
+        user_id = decoded_token['user_id']
+
+        # Retrieve the user's name, height, weight, age, and goal from the user table
+        select_query = "SELECT name, height, weight, age, goal FROM user WHERE user_id = %s"
+        my_cursor.execute(select_query, (user_id,))
+        result = my_cursor.fetchone()
+
+        if not result:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Extract the values from the database result
+        name, height, weight, age = result
+
+        # Return the user profile information
+        return jsonify({
+            'name': name,
+            'height': height,
+            'weight': weight,
+            'age': age,
+            
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
+
+
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

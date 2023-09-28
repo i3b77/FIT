@@ -10,6 +10,11 @@ import jwt
 import bcrypt
 import time
 import datetime
+from jwt.exceptions import ExpiredSignatureError,InvalidTokenError
+
+
+
+
 app = Flask(__name__)
 
 mydb = mysql.connector.connect(
@@ -105,19 +110,6 @@ def search_exercises():
     return jsonify(exercises)
 
     
-@app.route('/users')
-def SearchEngin():
-    sql = ['use fitness', 'select * from users ']
-    # where equipment = "Bands" AND type = "Powerlifting"
-
-    user_id = request.args.get('user_id', default=None)
-    f_name = request.args.get('f_name', default=None)
-    l_name = request.args.get('l_name', default=None)
-    birth_date = request.args.get('birth_date', default=None)
-    country = request.args.get('country', default=None)
-    email = request.args.get('email', default=None)
-    phone_no = request.args.get('phone_no', default=None)
-
 @app.route('/')
 def printExersiceTable():
     name = request.args['name']
@@ -394,7 +386,7 @@ def add_exercises_to_plan():
             return jsonify({'error': 'No plan ID provided'}), 400
 
         # Validate the level field
-        valid_levels = ["Gain Weight", "Weight Loss", "Improve Fitness"]
+        valid_levels = ["Beginner", "Intermediate", "Advanced"]
         if level not in valid_levels:
             return jsonify({'error': 'Invalid level'}), 400
 
@@ -420,11 +412,12 @@ def add_exercises_to_plan():
         return jsonify({'message': 'Exercises added to the plan successfully', 'plan_id': plan_id}), 200
 
     except jwt.ExpiredSignatureError:
-        return jsonify({'error': 'Token has expired'}), 401
+        return jsonify({'error': 'Please login again to confirm your identity'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
 
 
 
@@ -549,8 +542,6 @@ def get_trainee_workout(plan_id):
         return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
 
 
-
-
 @app.route('/profile', methods=['GET'])
 def get_user_profile():
     # Retrieve the token from the request's Authorization header
@@ -578,7 +569,7 @@ def get_user_profile():
             return jsonify({'error': 'User not found'}), 404
 
         # Extract the values from the database result
-        name, height, weight, age = result
+        name, height, weight, age, goal = result
 
         # Return the user profile information
         return jsonify({
@@ -586,11 +577,12 @@ def get_user_profile():
             'height': height,
             'weight': weight,
             'age': age,
+            'goal':goal
             
         }), 200
 
     except jwt.ExpiredSignatureError:
-        return jsonify({'error': 'Token has expired'}), 401
+        return jsonify({'error': 'Please login again to confirm your identity'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
     except Exception as e:

@@ -10,7 +10,6 @@ import jwt
 import bcrypt
 import time
 import datetime
-from jwt.exceptions import ExpiredSignatureError,InvalidTokenError
 app = Flask(__name__)
 
 mydb = mysql.connector.connect(
@@ -358,140 +357,6 @@ def verify_token(token):
 
 
 
-##@app.route('/workouts/<int:user_id>', methods=['GET'])
-##def get_trainee_workouts(user_id):
-    # Retrieve the token from the request headers
-    authorization_header = request.headers.get('Authorization')
-
-    if not authorization_header:
-        return jsonify({'error': 'No token provided'}), 401
-
-    try:
-        # Check if the token starts with "Bearer "
-        if authorization_header.startswith('Bearer '):
-            # Split the token to extract the actual token value
-            token = authorization_header.split(' ')[1]
-        else:
-            return jsonify({'error': 'Invalid token'}), 401
-
-        # Verify and decode the token
-        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
-
-        # Extract user ID from the token payload
-        user_id_from_token = payload['user_id']
-
-        if user_id != user_id_from_token:
-            return jsonify({'error': 'Invalid user ID'}), 401
-
-        # Retrieve workouts for the trainee based on user ID
-        sql = """
-                SELECT user_id, name, plan_id, exercise.id, title
-                FROM user
-                JOIN plan ON user.user_id = plan.user_user_id1
-                JOIN planexerciseid ON plan.plan_id = planexerciseid.plan_plan_id
-                JOIN exercise ON planexerciseid.exercise_id = exercise.id
-                WHERE user.user_id = %s
-             """
-        my_cursor.execute(sql, (user_id,))
-        workouts = my_cursor.fetchall()
-
-        # Check if any workouts are found
-        if not workouts:
-            return jsonify({'error': 'No workouts found for the trainee.'}), 404
-
-        # Format the response
-        results = []
-        for workout in workouts:
-            user_id, name, plan_id, id, title = workout
-            workout_data = {
-                'user_id': user_id,
-                'name': name,
-                'plan_id': plan_id,
-                'exercise_id': id,
-                'title': title
-            }
-            results.append(workout_data)
-
-        return jsonify(results), 200
-
-    except jwt.ExpiredSignatureError:
-        return jsonify({'error': 'Token has expired'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'error': 'Invalid token'}), 401
-    except Exception as e:
-        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
-
-
-
-##@app.route('/workout/<int:user_id>/<int:plan_id>', methods=['GET'])
-##def get_trainee_workout(user_id, plan_id):
-    # Retrieve the user record from the user table
-    query = "SELECT token FROM user WHERE user_id = %s"
-    my_cursor.execute(query, (user_id,))
-    result = my_cursor.fetchone()
-
-    if not result:
-        return jsonify({'error': 'User not found'}), 404
-
-    token = result[0]
-
-    if not token:
-        return jsonify({'error': 'No token provided'}), 401
-
-    try:
-        # Check if the token starts with "Bearer "
-        if token.startswith('Bearer '):
-            # Split the token to extract the actual token value
-            token = token.split(' ')[1]
-
-        # Verify and decode the token
-        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
-
-        # Extract user ID from the token payload
-        user_id_from_token = payload['user_id']
-
-        if user_id != user_id_from_token:
-            return jsonify({'error': 'Invalid user ID'}), 401
-
-        # Retrieve workouts for the trainee based on user ID and plan ID
-        sql = """
-                SELECT user_id, name, plan_id, exercise.id, title
-                FROM user 
-                JOIN plan ON user.user_id = plan.user_user_id1
-                JOIN planexerciseid ON plan.plan_id = planexerciseid.plan_plan_id
-                JOIN exercise ON planexerciseid.exercise_id = exercise.id
-                WHERE user.user_id = %s AND plan.plan_id = %s
-             """
-        my_cursor.execute(sql, (user_id, plan_id))
-        workouts = my_cursor.fetchall()
-
-        # Check if any workouts are found
-        if not workouts:
-            return jsonify({'error': 'No workouts found for the trainee.'}), 404
-
-        # Format the response
-        results = []
-        for workout in workouts:
-            user_id, name, plan_id, id, title = workout
-            workout_data = {
-                'user_id': user_id,
-                'name': name,
-                'plan_id': plan_id,
-                'exercise_id': id,
-                'title': title
-            }
-            results.append(workout_data)
-
-        return jsonify(results), 200
-
-    except jwt.ExpiredSignatureError:
-        return jsonify({'error': 'Token has expired'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'error': 'Invalid token'}), 401
-    except Exception as e:
-        return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
-
-
 
 
 @app.route('/plan/exercises', methods=['POST'])
@@ -564,107 +429,101 @@ def add_exercises_to_plan():
 
 
 
+@app.route('/workouts/<string:goal>', methods=['GET'])
+def get_trainee_workouts(goal):
+    # Get the token from the request headers or query parameters, whichever you're using
+    auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
 
-@app.route('/workouts/<int:user_id>', methods=['GET'])
-def get_trainee_workouts(user_id):
-    # Retrieve the token from the request headers
-    authorization_header = request.headers.get('Authorization')
-
-    if not authorization_header:
+    # Check if the Authorization header is present
+    if not auth_header:
         return jsonify({'error': 'No token provided'}), 401
 
+    # Split the auth header to extract the token value
+    auth_parts = auth_header.split('Bearer ')
+
+    # Check if the Authorization header has the correct format
+    if len(auth_parts) != 2:
+        return jsonify({'error': 'Invalid token format'}), 401
+
+    token = auth_parts[1]
+
+    # Extract the user ID from the token
     try:
-        # Check if the token starts with "Bearer "
-        if authorization_header.startswith('Bearer '):
-            # Split the token to extract the actual token value
-            token = authorization_header.split(' ')[1]
-        else:
-            return jsonify({'error': 'Invalid token'}), 401
-
-        # Verify and decode the token
-        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
-
-        # Extract user ID from the token payload
-        user_id_from_token = payload['user_id']
-
-        if user_id != user_id_from_token:
-            return jsonify({'error': 'Invalid user ID'}), 401
-
-        # Retrieve plan IDs, title, and goal for the trainee based on user ID
-        sql = """
-                SELECT plan_id, level
-                FROM plan
-                WHERE user_user_id1 = %s
-             """
-        my_cursor.execute(sql, (user_id,))
-        plan_records = my_cursor.fetchall()
-
-        # Check if any plan IDs are found
-        if not plan_records:
-            return jsonify({'error': 'No plans found for the trainee.'}), 404
-
-        # Format the response
-        response = []
-        for record in plan_records:
-            plan_id, level = record
-            workout_data = {
-                'plan_id': plan_id,
-                'level': level
-                
-            }
-            response.append(workout_data)
-
-        return jsonify(response), 200
-
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        user_id_from_token = decoded_token['user_id']
     except jwt.ExpiredSignatureError:
-        return jsonify({'error': 'Token has expired'}), 401
+        return jsonify({'error': 'Please login again to confirm your identity'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
 
+    # Define the valid workout goals
+    valid_goals = ["Gain muscles", "Improve fitness", "Loose weight"]
+
+    # Check if the provided workout goal is valid
+    if goal not in valid_goals:
+        return jsonify({'error': 'Invalid workout goal'}), 400
+
+    # Retrieve plan IDs and levels for the user based on the user ID and the specified workout goal
+    sql = """
+            SELECT plan_id, level
+            FROM plan
+            WHERE user_user_id1 = %s AND goal = %s
+         """
+    my_cursor.execute(sql, (user_id_from_token, goal))
+    plan_data = my_cursor.fetchall()
+
+    # Check if any plan data is found
+    if not plan_data:
+        return jsonify({'error': 'No plans found for the user with the specified goal.'}), 404
+
+    results = []
+    for plan in plan_data:
+        plan_id = plan[0]
+        level = plan[1]
+        results.append({'plan_id': plan_id, 'level': level})
+
+    return jsonify(results), 200
 
 
-@app.route('/workout/<int:user_id>/<int:plan_id>', methods=['GET'])
-def get_trainee_workout(user_id, plan_id):
-    # Retrieve the user record from the user table
-    query = "SELECT token FROM user WHERE user_id = %s"
-    my_cursor.execute(query, (user_id,))
-    result = my_cursor.fetchone()
 
-    if not result:
-        return jsonify({'error': 'User not found'}), 404
 
-    token = result[0]
+@app.route('/workout/<int:plan_id>', methods=['GET'])
+def get_trainee_workout(plan_id):
+    # Get the token from the request headers or query parameters, whichever you're using
+    auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
 
-    if not token:
+    # Check if the Authorization header is present
+    if not auth_header:
         return jsonify({'error': 'No token provided'}), 401
 
-    try:
-        # Check if the token starts with "Bearer "
-        if token.startswith('Bearer '):
-            # Split the token to extract the actual token value
-            token = token.split(' ')[1]
+    # Split the auth header to extract the token value
+    auth_parts = auth_header.split('Bearer ')
 
+    # Check if the Authorization header has the correct format
+    if len(auth_parts) != 2:
+        return jsonify({'error': 'Invalid token format'}), 401
+
+    token = auth_parts[1]
+
+    try:
         # Verify and decode the token
-        payload = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
 
         # Extract user ID from the token payload
-        user_id_from_token = payload['user_id']
+        user_id_from_token = decoded_token['user_id']
 
-        if user_id != user_id_from_token:
-            return jsonify({'error': 'Invalid user ID'}), 401
-
-        # Retrieve workouts for the trainee based on user ID and plan ID
+        # Retrieve workouts for the trainee based on user ID from the token and plan ID from the route
         sql = """
-                SELECT exercise.title
+                SELECT exercise.id, exercise.level, exercise.title
                 FROM user 
                 JOIN plan ON user.user_id = plan.user_user_id1
                 JOIN planexerciseid ON plan.plan_id = planexerciseid.plan_plan_id
                 JOIN exercise ON planexerciseid.exercise_id = exercise.id
                 WHERE user.user_id = %s AND plan.plan_id = %s
              """
-        my_cursor.execute(sql, (user_id, plan_id))
+        my_cursor.execute(sql, (user_id_from_token, plan_id))
         workouts = my_cursor.fetchall()
 
         # Check if any workouts are found
@@ -674,18 +533,21 @@ def get_trainee_workout(user_id, plan_id):
         # Format the response
         results = []
         for workout in workouts:
-            title = workout[0]
-            workout_data = {'title': title}
+            workout_id = workout[0]
+            level = workout[1]
+            title = workout[2]
+            workout_data = {'id': workout_id, 'level': level, 'title': title}
             results.append(workout_data)
 
         return jsonify(results), 200
 
     except jwt.ExpiredSignatureError:
-        return jsonify({'error': 'Token has expired'}), 401
+        return jsonify({'error': 'Please login again to confirm your identity'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'error': 'An error occurred', 'details': str(e)}), 500
+
 
 
 

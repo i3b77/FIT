@@ -10,22 +10,21 @@ import jwt
 import bcrypt
 import time
 import datetime
-from config import Config
+
 
 
 
 
 app = Flask(__name__)
 
-app.config.from_object(Config)
 
 # Create a MySQL connection
 mydb = mysql.connector.connect(
-    host=app.config['DB_HOST'],
-    user=app.config['DB_USER'],
-    password=app.config['DB_PASSWORD'],
-    database=app.config['DB_NAME']
-)
+    host='localhost',
+    user='root',
+    password="شش2806607",
+    database='fitness',
+    )
 
 
 

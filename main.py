@@ -29,6 +29,13 @@ mydb = mysql.connector.connect(
 )
 
 
+
+
+
+
+
+
+
 app.config['SECRET_KEY']='AbdullahFawazMahmoud'
 my_cursor = mydb.cursor()
 fake=Faker()

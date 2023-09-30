@@ -22,7 +22,6 @@ app.config.from_object(Config)
 # Create a MySQL connection
 mydb = mysql.connector.connect(
     host=app.config['DB_HOST'],
-    port=app.config['DB_PORT'],
     user=app.config['DB_USER'],
     password=app.config['DB_PASSWORD'],
     database=app.config['DB_NAME']

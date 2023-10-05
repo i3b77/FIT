@@ -10,7 +10,7 @@ import jwt
 import bcrypt
 import time
 import datetime
-
+import logging
 
 
 
@@ -30,7 +30,7 @@ mydb = mysql.connector.connect(
 
 
 
-
+logging.getLogger("openblas").setLevel(logging.WARNING)
 
 
 

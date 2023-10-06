@@ -6,7 +6,7 @@ from faker import Faker
 from functools import wraps
 import random
 import pyfloat
-from jwt import jwt,encode
+import jwt
 import bcrypt
 import time
 import datetime

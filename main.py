@@ -238,7 +238,7 @@ def login():
         token = jwt.encode(token_payload, 'AbdullahFawazMahmoud')
 
     # Update the token in the user table
-    my_cursor.execute("UPDATE user SET token = %s WHERE user_id = %s", (token.decode('utf-8'), user[0]))  # Assuming the user id is stored in the 'user_id' field of the user dictionary
+    my_cursor.execute("UPDATE user SET token = %s WHERE user_id = %s", (token, user[0]))  # Assuming the user id is stored in the 'user_id' field of the user dictionary
     mydb.commit()
 
     return jsonify({'token': token})

@@ -218,7 +218,7 @@ def login():
             existing_payload = jwt.decode(existing_token, 'AbdullahFawazMahmoud')
 
             # Extend the expiration time by 30 minutes
-            existing_payload['exp'] = dt.utcnow() + datetime.timedelta(minutes=180)
+            existing_payload['exp'] = dt.utcnow() + datetime.timedelta(hours=24)
 
             # Encode the updated payload with the secret key
             token = jwt.encode(existing_payload, 'AbdullahFawazMahmoud')
@@ -226,7 +226,7 @@ def login():
             # Existing token has expired, generate a new token as usual
             token_payload = {
                 'user_id': user[0],  # Assuming the user id is stored in the 'user_id' field of the user dictionary
-                'exp': dt.utcnow() + datetime.timedelta(minutes=180)
+                'exp': dt.utcnow() + datetime.timedelta(hours=24)
             }
             token = jwt.encode(token_payload, 'AbdullahFawazMahmoud')
     else:

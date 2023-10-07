@@ -433,6 +433,62 @@ def add_exercises_to_plan():
 
 
 
+
+@app.route('/allWorkouts', methods=['GET'])
+def get_user_allworkouts():
+    # Get the token from the request headers or query parameters
+    auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
+
+    if not auth_header:
+        return jsonify({'message': 'No token provided'}), 401
+
+    # Split the auth header to extract the token value
+    auth_parts = auth_header.split('Bearer ')
+
+    # Check if the Authorization header has the correct format
+    if len(auth_parts) != 2:
+        return jsonify({'message': 'Invalid token format'}), 401
+
+    token = auth_parts[1]
+
+    try:
+        # Decode and verify the token
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        user_id = decoded_token['user_id']  # Assuming the user ID is stored in the 'user_id' claim
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+
+    # Retrieve the plans for the user with the given user ID
+    sql = "SELECT * FROM plan WHERE user_user_id1 = %s"
+    my_cursor.execute(sql, (user_id,))
+    plans = my_cursor.fetchall()
+
+    if not plans:
+        return jsonify({'message': 'No plans found for the user'})
+
+    # Format the plans data as needed
+    formatted_plans = []
+    for plan in plans:
+        plan_data = {
+            'plan_id': plan[0],
+            'level': plan[1],
+            # Add more fields as needed
+        }
+        formatted_plans.append(plan_data)
+
+    return jsonify({'plans': formatted_plans})
+
+
+
+
+
+
+
+
+
+
 @app.route('/workouts/<string:goal>', methods=['GET'])
 def get_trainee_workouts(goal):
     # Get the token from the request headers or query parameters, whichever you're using

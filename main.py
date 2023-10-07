@@ -460,9 +460,19 @@ def get_user_allworkouts():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
 
-    # Retrieve the plans for the user with the given user ID
-    sql = "SELECT plan_id, level FROM plan WHERE user_user_id1 = %s"
-    my_cursor.execute(sql, (user_id,))
+    # Retrieve the user's name from the "user" table based on the user ID
+    sql_user = "SELECT name FROM user WHERE user_id = %s"
+    my_cursor.execute(sql_user, (user_id,))
+    user = my_cursor.fetchone()
+
+    if not user:
+        return jsonify({'message': 'User not found'})
+
+    name = user[0]
+
+    # Retrieve the plans for the user with the given user ID, including the level and plan ID
+    sql_plan = "SELECT plan_id, level FROM plan WHERE user_user_id1 = %s"
+    my_cursor.execute(sql_plan, (user_id,))
     plans = my_cursor.fetchall()
 
     if not plans:
@@ -473,13 +483,9 @@ def get_user_allworkouts():
     for plan in plans:
         plan_id = plan[0]
         level = plan[1]
-        formatted_plans.append({'Plan id': f'workout {plan_id}', 'Level': level})
+        formatted_plans.append({'name': name, 'Plan id': plan_id, 'Level': level})
 
     return jsonify(formatted_plans)
-
-
-
-
 
 
 

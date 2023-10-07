@@ -461,27 +461,21 @@ def get_user_allworkouts():
         return jsonify({'message': 'Invalid token'}), 401
 
     # Retrieve the plans for the user with the given user ID
-    sql = "SELECT * FROM plan WHERE user_user_id1 = %s"
+    sql = "SELECT plan_id, level FROM plan WHERE user_user_id1 = %s"
     my_cursor.execute(sql, (user_id,))
     plans = my_cursor.fetchall()
 
     if not plans:
         return jsonify({'message': 'No plans found for the user'})
 
-    # Format the plans data as needed
+    # Format the plans data
     formatted_plans = []
     for plan in plans:
-        plan_data = {
-            'plan_id': plan[0],
-            'level': plan[1],
-            # Add more fields as needed
-        }
-        formatted_plans.append(plan_data)
+        plan_id = plan[0]
+        level = plan[1]
+        formatted_plans.append({'Plan id': f'workout {plan_id}', 'Level': level})
 
-    return jsonify({'plans': formatted_plans})
-
-
-
+    return jsonify(formatted_plans)
 
 
 

@@ -20,10 +20,10 @@ app = Flask(__name__)
 
 # Create a MySQL connection
 mydb = mysql.connector.connect(
-    host='db-mysql-nyc1-62879-do-user-14717504-0.b.db.ondigitalocean.com',
+    host='db-mysql-blr1-77519-do-user-14717504-0.b.db.ondigitalocean.com',
     port=25060,
     user='doadmin',
-    password="AVNS_rUM9qf04OiiGYuP-yku",
+    password="AVNS_niuIQ2r7V7aSoTYroXP",
     database='fitness',
     )
 

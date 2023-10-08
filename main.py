@@ -434,8 +434,8 @@ def add_exercises_to_plan():
 
 
 
-@app.route('/allWorkouts', methods=['GET'])
-def get_user_allworkouts():
+@app.route('/workouts', methods=['GET'])
+def get_user_workouts():
     # Get the token from the request headers or query parameters
     auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
 
@@ -470,22 +470,35 @@ def get_user_allworkouts():
 
     name = user[0]
 
-    # Retrieve the plans for the user with the given user ID, including the level and plan ID
-    sql_plan = "SELECT plan_id, level FROM plan WHERE user_user_id1 = %s"
-    my_cursor.execute(sql_plan, (user_id,))
+    # Retrieve the plans for the user with the given user ID, including the plan ID, level, and plan name
+    sql_plans = """
+        SELECT p.plan_id, p.level, p.plan_name
+        FROM plan p
+        WHERE p.user_id = %s
+    """
+    my_cursor.execute(sql_plans, (user_id,))
     plans = my_cursor.fetchall()
 
     if not plans:
         return jsonify({'message': 'No plans found for the user'})
 
-    # Format the plans data
-    formatted_plans = []
+    # Create a list of JSONs for the plans
+    plan_jsons = []
     for plan in plans:
-        plan_id = plan[0]
-        level = plan[1]
-        formatted_plans.append({'name': name, 'Plan id': plan_id, 'Level': level})
+        plan_json = {
+            'Plan ID': plan[0],
+            'Level': plan[1],
+            'Plan Name': plan[2]
+        }
+        plan_jsons.append(plan_json)
 
-    return jsonify(formatted_plans)
+    # Create the final response object with the user's name and the list of plan JSONs
+    response = {
+        'User Name': name,
+        'Plans': plan_jsons
+    }
+
+    return jsonify(response)
 
 
 

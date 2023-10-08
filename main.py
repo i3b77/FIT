@@ -474,7 +474,7 @@ def get_user_allworkouts():
     sql_plans = """
         SELECT p.plan_id, p.level, p.plan_name
         FROM plan p
-        WHERE p.user_id = %s
+        WHERE p.user_user_id = %s
     """
     my_cursor.execute(sql_plans, (user_id,))
     plans = my_cursor.fetchall()

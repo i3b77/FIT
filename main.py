@@ -434,8 +434,8 @@ def add_exercises_to_plan():
 
 
 
-@app.route('/allWorkouts', methods=['GET'])
-def get_user_allworkouts():
+@app.route('/workouts', methods=['GET'])
+def get_user_workouts():
     # Get the token from the request headers or query parameters
     auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
 
@@ -486,20 +486,19 @@ def get_user_allworkouts():
     plan_jsons = []
     for plan in plans:
         plan_json = {
-            'Plan ID': plan[0],
-            'Level': plan[1],
-            'Plan Name': plan[2]
+            'plan_id': plan[0],
+            'level': plan[1],
+            'plan_name': plan[2]
         }
         plan_jsons.append(plan_json)
 
     # Create the final response object with the user's name and the list of plan JSONs
     response = {
-        'User Name': name,
-        'Plans': plan_jsons
+        'name': name,
+        'plans': plan_jsons
     }
 
     return jsonify(response)
-
 
 
 @app.route('/workouts/<string:goal>', methods=['GET'])

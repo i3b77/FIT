@@ -24,7 +24,7 @@ mydb = mysql.connector.connect(
     port=25060,
     user='doadmin',
     password="AVNS_rUM9qf04OiiGYuP-yku",
-    database='finess',
+    database='fitness',
     )
 
 

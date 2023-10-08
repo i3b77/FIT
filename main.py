@@ -434,8 +434,8 @@ def add_exercises_to_plan():
 
 
 
-@app.route('/workouts', methods=['GET'])
-def get_user_workouts():
+@app.route('/allWorkouts', methods=['GET'])
+def get_user_allworkouts():
     # Get the token from the request headers or query parameters
     auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
 

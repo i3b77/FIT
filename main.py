@@ -115,8 +115,7 @@ def search_exercises():
             'rating': exercise[7],
             'ratingdesc': exercise[8]
         }
-        
-        
+        exercises.append(exercise_data)
 
     return jsonify(exercises)
 

@@ -438,31 +438,26 @@ def add_exercises_to_plan():
 
 @app.route('/allWorkouts', methods=['GET'])
 def get_user_allworkouts():
-    # Get the token from the request headers or query parameters
-    auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
+    auth_header = request.headers.get('Authorization')
 
     if not auth_header:
         return jsonify({'message': 'No token provided'}), 401
 
-    # Split the auth header to extract the token value
     auth_parts = auth_header.split('Bearer ')
 
-    # Check if the Authorization header has the correct format
     if len(auth_parts) != 2:
         return jsonify({'message': 'Invalid token format'}), 401
 
     token = auth_parts[1]
 
     try:
-        # Decode and verify the token
         decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
-        user_id = decoded_token['user_id']  # Assuming the user ID is stored in the 'user_id' claim
+        user_id = decoded_token['user_id']
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token has expired'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
 
-    # Retrieve the user's name from the "user" table based on the user ID
     sql_user = "SELECT name FROM user WHERE user_id = %s"
     my_cursor.execute(sql_user, (user_id,))
     user = my_cursor.fetchone()
@@ -472,7 +467,6 @@ def get_user_allworkouts():
 
     name = user[0]
 
-    # Retrieve the plans for the user with the given user ID, including the plan ID, level, and plan name
     sql_plans = """
         SELECT p.plan_id, p.level, p.plan_name
         FROM plan p
@@ -482,9 +476,12 @@ def get_user_allworkouts():
     plans = my_cursor.fetchall()
 
     if not plans:
-        return jsonify({'message': 'No plans found for the user'})
+        response = {
+            'name': name,
+            'plans': []
+        }
+        return jsonify(response)
 
-    # Create a list of JSONs for the plans
     plan_jsons = []
     for plan in plans:
         plan_json = {
@@ -494,13 +491,14 @@ def get_user_allworkouts():
         }
         plan_jsons.append(plan_json)
 
-    # Create the final response object with the user's name and the list of plan JSONs
     response = {
         'name': name,
         'plans': plan_jsons
     }
 
     return jsonify(response)
+
+
 
 
 @app.route('/workouts/<string:goal>', methods=['GET'])

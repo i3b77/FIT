@@ -704,12 +704,26 @@ def delete_plan(plan_id):
     if not plan:
         return jsonify({'message': 'Plan not found or does not belong to the user'}), 404
 
-    # Delete the plan
-    sql_delete_plan = "DELETE FROM plan WHERE plan_id = %s"
-    my_cursor.execute(sql_delete_plan, (plan_id,))
-    mydb.commit()
+    try:
+        # Start a transaction
+        
 
-    return jsonify({'message': 'Plan deleted successfully'}), 200
+        # Delete the associated exercise from the planexerciseid table
+        sql_delete_exercise = "DELETE FROM planexerciseid WHERE plan_id = %s"
+        my_cursor.execute(sql_delete_exercise, (plan_id,))
+
+        # Delete the plan from the plan table
+        sql_delete_plan = "DELETE FROM plan WHERE plan_id = %s"
+        my_cursor.execute(sql_delete_plan, (plan_id,))
+
+        # Commit the transaction
+        mydb.commit()
+
+        return jsonify({'message': 'Plan and associated exercise deleted successfully'}), 200
+    except Exception as e:
+        # Rollback the transaction on error
+        mydb.rollback()
+        return jsonify({'message': 'Error deleting the plan and associated exercise', 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

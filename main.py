@@ -709,7 +709,7 @@ def delete_plan(plan_id):
         
 
         # Delete the associated exercise from the planexerciseid table
-        sql_delete_exercise = "DELETE FROM planexerciseid WHERE plan_id = %s"
+        sql_delete_exercise = "DELETE FROM planexerciseid WHERE plan_plan_id = %s"
         my_cursor.execute(sql_delete_exercise, (plan_id,))
 
         # Delete the plan from the plan table

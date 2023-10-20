@@ -670,6 +670,47 @@ def get_user_profile():
 
 
 
+@app.route('/deletePlan/<int:plan_id>', methods=['DELETE'])
+def delete_plan(plan_id):
+    # Get the token from the request headers or query parameters
+    auth_header = request.headers.get('Authorization')  # Assuming the token is passed in the Authorization header
+
+    if not auth_header:
+        return jsonify({'message': 'No token provided'}), 401
+
+    # Split the auth header to extract the token value
+    auth_parts = auth_header.split('Bearer ')
+
+    # Check if the Authorization header has the correct format
+    if len(auth_parts) != 2:
+        return jsonify({'message': 'Invalid token format'}), 401
+
+    token = auth_parts[1]
+
+    try:
+        # Decode and verify the token
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        user_id = decoded_token['user_id']  # Assuming the user ID is stored in the 'user_id' claim
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+
+    # Check if the plan exists and belongs to the user
+    sql_check_plan = "SELECT * FROM plan WHERE plan_id = %s AND user_user_id1 = %s"
+    my_cursor.execute(sql_check_plan, (plan_id, user_id))
+    plan = my_cursor.fetchone()
+
+    if not plan:
+        return jsonify({'message': 'Plan not found or does not belong to the user'}), 404
+
+    # Delete the plan
+    sql_delete_plan = "DELETE FROM plan WHERE plan_id = %s"
+    my_cursor.execute(sql_delete_plan, (plan_id,))
+    mydb.commit()
+
+    return jsonify({'message': 'Plan deleted successfully'}), 200
+
 
 
 if __name__ == '__main__':

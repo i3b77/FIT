@@ -704,14 +704,6 @@ def delete_plan(plan_id):
     if not plan:
         return jsonify({'message': 'Plan not found or does not belong to the user'}), 404
 
-    # Check if the plan is referenced by other tables
-    sql_check_references = "SELECT * FROM planexerciseid WHERE plan_plan_id = %s"
-    my_cursor.execute(sql_check_references, (plan_id,))
-    references = my_cursor.fetchall()
-
-    if references:
-        return jsonify({'message': 'Cannot delete the plan because it is referenced in other tables'}), 400
-
     # Delete the plan
     sql_delete_plan = "DELETE FROM plan WHERE plan_id = %s"
     my_cursor.execute(sql_delete_plan, (plan_id,))

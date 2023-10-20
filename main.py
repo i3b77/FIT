@@ -724,6 +724,14 @@ def delete_plan(plan_id):
         # Rollback the transaction on error
         mydb.rollback()
         return jsonify({'message': 'Error deleting the plan and associated exercise', 'error': str(e)}), 500
+    
+
+
+@app.route('/calculateWaterNeed/<int:weight>', methods=['GET'])
+def calculate_water_need(weight):
+    water_need = weight * 0.033  # Assuming the water need is 33 milliliters per kilogram of body weight
+
+    return jsonify({'water_need': water_need}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

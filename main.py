@@ -733,5 +733,56 @@ def calculate_water_need(weight):
 
     return jsonify({'water_need': water_need}), 200
 
+
+@app.route('/AiMaker')
+def fakeAi():
+    query = 'SELECT * FROM exercise WHERE bodypart=Abdominals '
+    my_cursor.execute(query)
+    resultsForAbdominals = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart=Adductors '
+    my_cursor.execute(query)
+    resultsForAdductorsAndAbductors = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart=Abductors ' #WHERE bodypart="Biceps"
+    my_cursor.execute(query)
+    resultsForAdductorsAndAbductors += my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Biceps '
+    my_cursor.execute(query)
+    resultsForBiceps = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Calves '
+    my_cursor.execute(query)
+    resultsForCalves = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Lats'
+    my_cursor.execute(query)
+    resultsForLats = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Triceps '
+    my_cursor.execute(query)
+    resultsForTriceps = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Glutes '
+    my_cursor.execute(query)
+    resultsForGlutes = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Chest '
+    my_cursor.execute(query)
+    resultsForChest = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Shoulders '
+    my_cursor.execute(query)
+    resultsForShoulders = my_cursor.fetchall()
+
+    query = 'SELECT * FROM exercise WHERE bodypart = Quadriceps '
+    my_cursor.execute(query)
+    resultsForQuadriceps = my_cursor.fetchall()
+
+    return jsonify(resultsForQuadriceps)
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

@@ -765,7 +765,7 @@ def fakeAi():
         for name in listOfNames:
             query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
             my_cursor.execute(query)
-            result = my_cursor.fetchone()
+            result = my_cursor.fetchall()
             if result:
                 exercise_ids.append(result[0])
 
@@ -792,8 +792,6 @@ def fakeAi():
         return jsonify({'message': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
-
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

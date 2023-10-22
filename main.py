@@ -737,25 +737,19 @@ def calculate_water_need(weight):
 @app.route('/AiMaker', methods=['GET'])
 def fakeAi():
     try:
-        # Retrieve the Authorization header from the request
-        authorization_header = request.headers.get('Authorization')
+        # Retrieve the token from the request's Authorization header
+        token = request.headers.get('Authorization')
 
-        # Check if the Authorization header is present
-        if not authorization_header:
+        if not token:
             return jsonify({'message': 'Missing token'}), 401
 
-        # Split the Authorization header to extract the token
-        auth_parts = authorization_header.split('Bearer ')
+        # Remove the "Bearer" prefix from the token if present
+        if token.startswith('Bearer '):
+            token = token.split(' ')[1]
 
-        # Check if the Authorization header has the correct format
-        if len(auth_parts) != 2 or not auth_parts[1]:
-            return jsonify({'message': 'Invalid token format'}), 401
-
-        # Extract the token
-        token = auth_parts[1]
-
-        # Verify and decode the token to extract the user ID
-        decoded_token = jwt.decode(token, algorithms=['HS256'])
+        # Verify and decode the token
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        # Extract user ID from the decoded token
         user_id = decoded_token['user_id']
 
         # Convert the user ID to an integer
@@ -792,11 +786,12 @@ def fakeAi():
 
         return "Plan created!"
 
-    except jwt.exceptions.DecodeError:
-        return jsonify({'message': 'Invalid token format'}), 401
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Please login again to confirm your identity'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
     except Exception as e:
-        return jsonify({'message': str(e)}), 500
-    
+        return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
 
 
 

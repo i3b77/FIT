@@ -756,24 +756,15 @@ def fakeAi():
         # Convert the user ID to an integer
         user_id = int(user_id)
 
-        # Retrieve the list of exercise IDs for each body part
-        listOfNames = ['Abdominals', 'Adductors', 'Biceps',
-                       'Calves', 'Lats', 'Triceps', 'Glutes',
-                       'Chest', 'Shoulders', 'Quadriceps']
+        # Randomly choose a goal and level
+        goals = ["Loose weight", "Gain muscles", "Improve fitness"]
+        levels = ["Beginner", "Intermediate", "Advanced"]
 
-        exercise_ids = []
-
-        for name in listOfNames:
-            query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
-            my_cursor.execute(query)
-            result = my_cursor.fetchone()
-            if result:
-                exercise_ids.append(result[0])
+        goal = random.choice(goals)
+        level = random.choice(levels)
 
         # Create a new plan for the user in the "plan" table
-        goal = random.choice(["Loose weight", "Gain muscles", "Improve fitness"])
-        level = random.choice(["Beginner", "Intermediate", "Advanced"])
-        query = "INSERT INTO plan (user_id, goal, level) VALUES (%s, %s, %s)"
+        query = "INSERT INTO plan (user_user_id1, goal, level) VALUES (%s, %s, %s)"
         values = (user_id, goal, level)
         my_cursor.execute(query, values)
         mydb.commit()
@@ -781,9 +772,21 @@ def fakeAi():
         # Retrieve the auto-generated plan ID from the last insert
         plan_id = my_cursor.lastrowid
 
-        # Insert the exercise IDs into the "planexerciseid" table
+        # Define the list of body part names
+        listOfNames = ['Abdominals', 'Adductors', 'Biceps', 'Calves', 'Lats', 'Triceps', 'Glutes', 'Chest', 'Shoulders', 'Quadriceps']
+
+        # Insert one exercise ID for each body part into the "planexerciseid" table
         query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
-        values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
+        values = []
+
+        for name in listOfNames:
+            query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
+            my_cursor.execute(query)
+            result = my_cursor.fetchone()
+            if result:
+                exercise_id = result[0]
+                values.append((plan_id, exercise_id))
+
         my_cursor.executemany(query, values)
         mydb.commit()
 
@@ -795,7 +798,6 @@ def fakeAi():
         return jsonify({'message': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
-    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

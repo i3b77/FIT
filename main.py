@@ -740,11 +740,15 @@ def fakeAi():
         # Retrieve the Authorization header from the request
         authorization_header = request.headers.get('Authorization')
 
+        # Check if the Authorization header is present
+        if not authorization_header:
+            return jsonify({'message': 'Missing token'}), 401
+
         # Split the Authorization header to extract the token
-        auth_parts = authorization_header.split('Bearer ')
+        auth_parts = authorization_header.split()
 
         # Check if the Authorization header has the correct format
-        if len(auth_parts) != 2:
+        if len(auth_parts) != 2 or auth_parts[0].lower() != 'bearer':
             return jsonify({'message': 'Invalid token format'}), 401
 
         # Extract the token
@@ -789,8 +793,12 @@ def fakeAi():
         return "Plan created!"
 
     except jwt.exceptions.DecodeError:
-        return jsonify({'error': 'Invalid token format'}), 401
+        return jsonify({'message': 'Invalid token format'}), 401
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'message': str(e)}), 500
+    
+
+
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

@@ -736,38 +736,51 @@ def calculate_water_need(weight):
 
 @app.route('/AiMaker')
 def fakeAi():
-    user_id = request.args['user_id']
-    listOfNames = ['Abdominals', 'Adductors', 'Biceps',
-                   'Calves', 'Lats', 'Triceps', 'Glutes',
-                   'Chest', 'Shoulders', 'Quadriceps']
+    try:
+        # Get the Bearer token from the request headers
+        token = request.headers.get('Authorization')
 
-    resultsForAbdominals = []
-    resultsForAdductorsAndAbductors = []
-    resultsForBiceps = []
-    resultsForCalves = []
-    resultsForLats = []
-    resultsForTriceps = []
-    resultsForGlutes = []
-    resultsForChest = []
-    resultsForShoulders = []
-    resultsForQuadriceps = []
+        # Check if the token is present and in the correct format
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'error': 'Invalid token'}), 401
 
-    lis = [resultsForAbdominals, resultsForAdductorsAndAbductors, resultsForBiceps,
-           resultsForCalves, resultsForLats, resultsForTriceps, resultsForGlutes,
-           resultsForChest, resultsForShoulders, resultsForQuadriceps]
-    
-    for i in range(len(listOfNames)):
-        query = f"SELECT id FROM exercise WHERE bodypart='{listOfNames[i]}'"
-        my_cursor.execute(query)
-        lis[i] = my_cursor.fetchall()
+        # Extract the user ID from the token
+        user_id = token.split(' ')[1]
 
-    listOfId = []
+        # Retrieve the list of exercise IDs
+        listOfNames = ['Abdominals', 'Adductors', 'Biceps',
+                       'Calves', 'Lats', 'Triceps', 'Glutes',
+                       'Chest', 'Shoulders', 'Quadriceps']
 
-    for item in lis:
-        listOfId.append(item[random.randint(0, len(item) - 1)])
+        exercise_ids = []
 
-    return jsonify(listOfId)
+        for name in listOfNames:
+            query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
+            my_cursor.execute(query)
+            result = my_cursor.fetchone()
+            if result:
+                exercise_ids.append(result[0])
 
+        # Create a new plan for the user in the "plan" table
+        query = "INSERT INTO plan (user_id) VALUES (%s)"
+        values = (user_id,)
+        my_cursor.execute(query, values)
+        mydb.commit()
+
+        # Retrieve the auto-generated plan ID from the last insert
+        plan_id = my_cursor.lastrowid
+
+        # Insert the exercise IDs into the "planexerciseid" table
+        query = "INSERT INTO planexerciseid (plan_id, exercise_id) VALUES (%s, %s)"
+        values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
+        my_cursor.executemany(query, values)
+        mydb.commit()
+
+        return "Plan created!"
+    except IndexError:
+        return jsonify({'error': 'Invalid token format'}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

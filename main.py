@@ -771,7 +771,7 @@ def fakeAi():
         plan_id = my_cursor.lastrowid
 
         # Insert the exercise IDs into the "planexerciseid" table
-        query = "INSERT INTO planexerciseid (plan_id, exercise_id) VALUES (%s, %s)"
+        query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
         values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
         my_cursor.executemany(query, values)
         mydb.commit()

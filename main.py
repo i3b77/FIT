@@ -779,7 +779,7 @@ def fakeAi():
         query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
 
         for name in listOfNames:
-            exercise_id_query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
+            exercise_id_query = f"SELECT id FROM exercise WHERE bodypart='{name}' ORDER BY RAND() LIMIT 1"
             my_cursor.execute(exercise_id_query)
             result = my_cursor.fetchone()
             if result:

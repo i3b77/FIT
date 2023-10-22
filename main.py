@@ -740,12 +740,15 @@ def fakeAi():
         # Retrieve the Authorization header from the request
         authorization_header = request.headers.get('Authorization')
 
-        # Check if the Authorization header is present and starts with 'Bearer '
-        if not authorization_header or not authorization_header.startswith('Bearer '):
-            return jsonify({'error': 'Invalid token'}), 401
+        # Split the Authorization header to extract the token
+        auth_parts = authorization_header.split('Bearer ')
 
-        # Extract the token by removing the 'Bearer ' prefix
-        token = authorization_header.split(' ')[1]
+        # Check if the Authorization header has the correct format
+        if len(auth_parts) != 2:
+            return jsonify({'message': 'Invalid token format'}), 401
+
+        # Extract the token
+        token = auth_parts[1]
 
         # Verify and decode the token to extract the user ID
         decoded_token = jwt.decode(token, algorithms=['HS256'])
@@ -764,12 +767,12 @@ def fakeAi():
         for name in listOfNames:
             query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
             my_cursor.execute(query)
-            result = my_cursor.fetchall()
+            result = my_cursor.fetchone()
             if result:
                 exercise_ids.append(result[0])
 
         # Create a new plan for the user in the "plan" table
-        query = "INSERT INTO plan (user_user_id1) VALUES (%s)"
+        query = "INSERT INTO plan (user_id) VALUES (%s)"
         values = (user_id,)
         my_cursor.execute(query, values)
         mydb.commit()
@@ -778,7 +781,7 @@ def fakeAi():
         plan_id = my_cursor.lastrowid
 
         # Insert the exercise IDs into the "planexerciseid" table
-        query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
+        query = "INSERT INTO planexerciseid (plan_id, exercise_id) VALUES (%s, %s)"
         values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
         my_cursor.executemany(query, values)
         mydb.commit()
@@ -789,6 +792,5 @@ def fakeAi():
         return jsonify({'error': 'Invalid token format'}), 401
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

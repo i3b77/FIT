@@ -777,17 +777,16 @@ def fakeAi():
 
         # Insert one exercise ID for each body part into the "planexerciseid" table
         query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
-        values = []
 
         for name in listOfNames:
-            query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
-            my_cursor.execute(query)
+            exercise_id_query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
+            my_cursor.execute(exercise_id_query)
             result = my_cursor.fetchone()
             if result:
                 exercise_id = result[0]
-                values.append((plan_id, exercise_id))
+                values = (plan_id, exercise_id)
+                my_cursor.execute(query, values)
 
-        my_cursor.executemany(query, values)
         mydb.commit()
 
         return "Plan created!"

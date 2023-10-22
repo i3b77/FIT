@@ -733,6 +733,7 @@ def calculate_water_need(weight):
 
     return jsonify({'water_need': water_need}), 200
 
+ 
 
 @app.route('/AiMaker', methods=['GET'])
 def fakeAi():
@@ -765,7 +766,7 @@ def fakeAi():
         for name in listOfNames:
             query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
             my_cursor.execute(query)
-            result = my_cursor.fetchall()
+            result = my_cursor.fetchone()
             if result:
                 exercise_ids.append(result[0])
 
@@ -778,10 +779,12 @@ def fakeAi():
         # Retrieve the auto-generated plan ID from the last insert
         plan_id = my_cursor.lastrowid
 
+        # Convert exercise IDs to a list of lists
+        exercise_id_list = [[plan_id, exercise_id] for exercise_id in exercise_ids]
+
         # Insert the exercise IDs into the "planexerciseid" table
         query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
-        values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
-        my_cursor.executemany(query, values)
+        my_cursor.executemany(query, exercise_id_list)
         mydb.commit()
 
         return "Plan created!"
@@ -792,6 +795,7 @@ def fakeAi():
         return jsonify({'message': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
-
+    
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

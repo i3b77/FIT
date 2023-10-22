@@ -745,10 +745,10 @@ def fakeAi():
             return jsonify({'message': 'Missing token'}), 401
 
         # Split the Authorization header to extract the token
-        auth_parts = authorization_header.split()
+        auth_parts = authorization_header.split('Bearer ')
 
         # Check if the Authorization header has the correct format
-        if len(auth_parts) != 2 or auth_parts[0].lower() != 'bearer':
+        if len(auth_parts) != 2 or not auth_parts[1]:
             return jsonify({'message': 'Invalid token format'}), 401
 
         # Extract the token
@@ -776,7 +776,7 @@ def fakeAi():
                 exercise_ids.append(result[0])
 
         # Create a new plan for the user in the "plan" table
-        query = "INSERT INTO plan (user_id) VALUES (%s)"
+        query = "INSERT INTO plan (user_user_id1) VALUES (%s)"
         values = (user_id,)
         my_cursor.execute(query, values)
         mydb.commit()
@@ -785,7 +785,7 @@ def fakeAi():
         plan_id = my_cursor.lastrowid
 
         # Insert the exercise IDs into the "planexerciseid" table
-        query = "INSERT INTO planexerciseid (plan_id, exercise_id) VALUES (%s, %s)"
+        query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
         values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
         my_cursor.executemany(query, values)
         mydb.commit()
@@ -799,6 +799,6 @@ def fakeAi():
     
 
 
-    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

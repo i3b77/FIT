@@ -756,7 +756,7 @@ def fakeAi():
         # Convert the user ID to an integer
         user_id = int(user_id)
 
-        # Retrieve the list of exercise IDs
+        # Retrieve the list of exercise IDs for each body part
         listOfNames = ['Abdominals', 'Adductors', 'Biceps',
                        'Calves', 'Lats', 'Triceps', 'Glutes',
                        'Chest', 'Shoulders', 'Quadriceps']
@@ -771,20 +771,20 @@ def fakeAi():
                 exercise_ids.append(result[0])
 
         # Create a new plan for the user in the "plan" table
-        query = "INSERT INTO plan (user_user_id1) VALUES (%s)"
-        values = (user_id,)
+        goal = random.choice(["Loose weight", "Gain muscles", "Improve fitness"])
+        level = random.choice(["Beginner", "Intermediate", "Advanced"])
+        query = "INSERT INTO plan (user_id, goal, level) VALUES (%s, %s, %s)"
+        values = (user_id, goal, level)
         my_cursor.execute(query, values)
         mydb.commit()
 
         # Retrieve the auto-generated plan ID from the last insert
         plan_id = my_cursor.lastrowid
 
-        # Convert exercise IDs to a list of lists
-        exercise_id_list = [[plan_id, exercise_id] for exercise_id in exercise_ids]
-
         # Insert the exercise IDs into the "planexerciseid" table
         query = "INSERT INTO planexerciseid (plan_plan_id, exercise_id) VALUES (%s, %s)"
-        my_cursor.executemany(query, exercise_id_list)
+        values = [(plan_id, exercise_id) for exercise_id in exercise_ids]
+        my_cursor.executemany(query, values)
         mydb.commit()
 
         return "Plan created!"
@@ -796,6 +796,6 @@ def fakeAi():
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
     
-    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)

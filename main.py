@@ -736,51 +736,37 @@ def calculate_water_need(weight):
 
 @app.route('/AiMaker')
 def fakeAi():
-    query = "SELECT * FROM exercise WHERE bodypart='Abdominals'"
-    my_cursor.execute(query)
-    resultsForAbdominals = my_cursor.fetchall()
+    user_id = request.args['user_id']
+    listOfNames = ['Abdominals', 'Adductors', 'Biceps',
+                   'Calves', 'Lats', 'Triceps', 'Glutes',
+                   'Chest', 'Shoulders', 'Quadriceps']
 
-    query = "SELECT * FROM exercise WHERE bodypart='Adductors'"
-    my_cursor.execute(query)
-    resultsForAdductorsAndAbductors = my_cursor.fetchall()
+    resultsForAbdominals = []
+    resultsForAdductorsAndAbductors = []
+    resultsForBiceps = []
+    resultsForCalves = []
+    resultsForLats = []
+    resultsForTriceps = []
+    resultsForGlutes = []
+    resultsForChest = []
+    resultsForShoulders = []
+    resultsForQuadriceps = []
 
-    query = "SELECT * FROM exercise WHERE bodypart='Abductors'"
-    my_cursor.execute(query)
-    resultsForAdductorsAndAbductors += my_cursor.fetchall()
+    lis = [resultsForAbdominals, resultsForAdductorsAndAbductors, resultsForBiceps,
+           resultsForCalves, resultsForLats, resultsForTriceps, resultsForGlutes,
+           resultsForChest, resultsForShoulders, resultsForQuadriceps]
+    
+    for i in range(len(listOfNames)):
+        query = f"SELECT id FROM exercise WHERE bodypart='{listOfNames[i]}'"
+        my_cursor.execute(query)
+        lis[i] = my_cursor.fetchall()
 
-    query = "SELECT * FROM exercise WHERE bodypart='Biceps'"
-    my_cursor.execute(query)
-    resultsForBiceps = my_cursor.fetchall()
+    listOfId = []
 
-    query = "SELECT * FROM exercise WHERE bodypart='Calves'"
-    my_cursor.execute(query)
-    resultsForCalves = my_cursor.fetchall()
+    for item in lis:
+        listOfId.append(item[random.randint(0, len(item) - 1)])
 
-    query = "SELECT * FROM exercise WHERE bodypart='Lats'"
-    my_cursor.execute(query)
-    resultsForLats = my_cursor.fetchall()
-
-    query = "SELECT * FROM exercise WHERE bodypart='Triceps'"
-    my_cursor.execute(query)
-    resultsForTriceps = my_cursor.fetchall()
-
-    query = "SELECT * FROM exercise WHERE bodypart='Glutes'"
-    my_cursor.execute(query)
-    resultsForGlutes = my_cursor.fetchall()
-
-    query = "SELECT * FROM exercise WHERE bodypart='Chest'"
-    my_cursor.execute(query)
-    resultsForChest = my_cursor.fetchall()
-
-    query = "SELECT * FROM exercise WHERE bodypart='Shoulders'"
-    my_cursor.execute(query)
-    resultsForShoulders = my_cursor.fetchall()
-
-    query = "SELECT * FROM exercise WHERE bodypart='Quadriceps'"
-    my_cursor.execute(query)
-    resultsForQuadriceps = my_cursor.fetchall()
-
-    return jsonify(resultsForQuadriceps)
+    return jsonify(listOfId)
 
 
 if __name__ == '__main__':

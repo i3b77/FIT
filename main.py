@@ -734,10 +734,10 @@ def calculate_water_need(weight):
     return jsonify({'water_need': water_need}), 200
 
 
-@app.route('/AiMaker')
+@app.route('/AiMaker', methods=['GET'])
 def fakeAi():
     try:
-        # Get the Bearer token from the request headers
+        # Retrieve the Bearer token from the request headers
         token = request.headers.get('Authorization')
 
         # Check if the token is present and in the correct format
@@ -757,12 +757,12 @@ def fakeAi():
         for name in listOfNames:
             query = f"SELECT id FROM exercise WHERE bodypart='{name}'"
             my_cursor.execute(query)
-            result = my_cursor.fetchone()
+            result = my_cursor.fetchall()
             if result:
                 exercise_ids.append(result[0])
 
         # Create a new plan for the user in the "plan" table
-        query = "INSERT INTO plan (user_id) VALUES (%s)"
+        query = "INSERT INTO plan (user_user_id1) VALUES (%s)"
         values = (user_id,)
         my_cursor.execute(query, values)
         mydb.commit()

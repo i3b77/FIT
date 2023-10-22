@@ -737,15 +737,22 @@ def calculate_water_need(weight):
 @app.route('/AiMaker', methods=['GET'])
 def fakeAi():
     try:
-        # Retrieve the Bearer token from the request headers
-        token = request.headers.get('Authorization')
+        # Retrieve the Authorization header from the request
+        authorization_header = request.headers.get('Authorization')
 
-        # Check if the token is present and in the correct format
-        if not token or not token.startswith('Bearer '):
+        # Check if the Authorization header is present and starts with 'Bearer '
+        if not authorization_header or not authorization_header.startswith('Bearer '):
             return jsonify({'error': 'Invalid token'}), 401
 
-        # Extract the user ID from the token
-        user_id = token.split(' ')[1]
+        # Extract the token by removing the 'Bearer ' prefix
+        token = authorization_header.split(' ')[1]
+
+        # Verify and decode the token to extract the user ID
+        decoded_token = jwt.decode(token, algorithms=['HS256'])
+        user_id = decoded_token['user_id']
+
+        # Convert the user ID to an integer
+        user_id = int(user_id)
 
         # Retrieve the list of exercise IDs
         listOfNames = ['Abdominals', 'Adductors', 'Biceps',
@@ -777,7 +784,8 @@ def fakeAi():
         mydb.commit()
 
         return "Plan created!"
-    except IndexError:
+
+    except jwt.exceptions.DecodeError:
         return jsonify({'error': 'Invalid token format'}), 401
     except Exception as e:
         return jsonify({'error': str(e)}), 500

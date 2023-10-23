@@ -735,6 +735,7 @@ def calculate_water_need(weight):
 
  
 
+
 @app.route('/AiMaker', methods=['GET'])
 def fakeAi():
     try:
@@ -763,8 +764,16 @@ def fakeAi():
         goal = random.choice(goals)
         level = random.choice(levels)
 
-        # Generate a random plan name
-        plan_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        # Define a list of meaningful plan names
+        plan_names = [
+    "FitLife", "PowerMax", "ShapeUp", "ActiveYou", "Vitality",
+    "WellnessPro", "Energize", "Revitalize", "StrongStart", "TotalTransform",
+    "HealthQuest", "BodyRevamp", "PeakPerformance", "MindBodyBalance", "UltimateWellbeing",
+    "DynamicFitness", "SculptTone", "RenewYou", "FitnessFusion", "EnduranceBoost"
+]
+
+        # Randomly select a plan name
+        plan_name = random.choice(plan_names)
 
         # Create a new plan for the user in the "plan" table
         query = "INSERT INTO plan (user_user_id1, goal, level, plan_name) VALUES (%s, %s, %s, %s)"
@@ -798,8 +807,6 @@ def fakeAi():
         return jsonify({'message': 'Please login again to confirm your identity'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
-    except Exception as e:
-        return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
     
 
 @app.route('/movetoarchive/<int:plan_id>', methods=['POST'])

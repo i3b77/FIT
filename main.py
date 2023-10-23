@@ -11,7 +11,7 @@ import bcrypt
 import time
 import datetime
 import logging
-
+import string
 
 
 
@@ -763,9 +763,12 @@ def fakeAi():
         goal = random.choice(goals)
         level = random.choice(levels)
 
+        # Generate a random plan name
+        plan_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+
         # Create a new plan for the user in the "plan" table
-        query = "INSERT INTO plan (user_user_id1, goal, level) VALUES (%s, %s, %s)"
-        values = (user_id, goal, level)
+        query = "INSERT INTO plan (user_user_id1, goal, level, plan_name) VALUES (%s, %s, %s, %s)"
+        values = (user_id, goal, level, plan_name)
         my_cursor.execute(query, values)
         mydb.commit()
 

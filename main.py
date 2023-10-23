@@ -766,10 +766,10 @@ def fakeAi():
 
         # Define a list of meaningful plan names
         plan_names = [
-    "FitLife", "PowerMax", "ShapeUp", "ActiveYou", "Vitality",
-    "WellnessPro", "Energize", "Revitalize", "StrongStart", "TotalTransform",
-    "HealthQuest", "BodyRevamp", "PeakPerformance", "MindBodyBalance", "UltimateWellbeing",
-    "DynamicFitness", "SculptTone", "RenewYou", "FitnessFusion", "EnduranceBoost"
+    "FitLife AI", "PowerMax AI", "ShapeUp AI", "ActiveYou AI", "Vitality AI",
+    "WellnessPro AI", "Energize AI", "Revitalize AI", "StrongStart AI", "TotalTransform AI",
+    "HealthQuest AI", "BodyRevamp AI", "PeakPerformance AI", "MindBodyBalance AI", "UltimateWellbeing AI",
+    "DynamicFitness AI", "SculptTone AI", "RenewYou AI", "FitnessFusion AI", "EnduranceBoost AI"
 ]
 
         # Randomly select a plan name

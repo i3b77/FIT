@@ -797,6 +797,99 @@ def fakeAi():
         return jsonify({'message': 'Invalid token'}), 401
     except Exception as e:
         return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
+    
+
+@app.route('/movetoarchive/<int:plan_id>', methods=['POST'])
+def movetoarchive(plan_id):
+    try:
+        # Retrieve the token from the request's Authorization header
+        token = request.headers.get('Authorization')
+
+        if not token:
+            return jsonify({'message': 'Missing token'}), 401
+
+        # Remove the "Bearer" prefix from the token if present
+        if token.startswith('Bearer '):
+            token = token.split(' ')[1]
+
+        # Verify and decode the token
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        # Extract user ID from the decoded token
+        user_id = decoded_token['user_id']
+
+        # Convert the user ID to an integer
+        user_id = int(user_id)
+
+        # Update the "status" column of the plan to "Archived" to indicate it has been archived
+        query = "UPDATE plan SET status = 'Archived' WHERE plan_id = %s AND user_user_id1 = %s"
+        values = (plan_id, user_id)
+        my_cursor.execute(query, values)
+        mydb.commit()
+
+        return jsonify({'message': 'Plan moved to archive'})
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Please login again to confirm your identity'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'message': 'An error occurred', 'details': str(e)}), 500
+
+
+
+
+
+@app.route('/archivedworkouts', methods=['GET'])
+def get_user_archivedworkouts():
+    auth_header = request.headers.get('Authorization')
+
+    if not auth_header:
+        return jsonify({'message': 'No token provided'}), 401
+
+    auth_parts = auth_header.split('Bearer ')
+
+    if len(auth_parts) != 2:
+        return jsonify({'message': 'Invalid token format'}), 401
+
+    token = auth_parts[1]
+
+    try:
+        decoded_token = jwt.decode(token, 'AbdullahFawazMahmoud', algorithms=['HS256'])
+        user_id = decoded_token['user_id']
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+
+    sql_plans = """
+        SELECT p.plan_id, p.level, p.plan_name
+        FROM plan p
+        WHERE p.user_user_id1 = %s AND p.status = 'Archived'
+    """
+    my_cursor.execute(sql_plans, (user_id,))
+    plans = my_cursor.fetchall()
+
+    if not plans:
+        return jsonify({'plans': []})
+
+    plan_jsons = []
+    for plan in plans:
+        plan_json = {
+            'plan_id': plan[0],
+            'level': plan[1],
+            'plan_name': plan[2]
+        }
+        plan_jsons.append(plan_json)
+
+    response = {'plans': plan_jsons}
+
+    return jsonify(response)
+
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080)
